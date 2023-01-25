@@ -1,0 +1,51 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 25/01/2023 15:12:32
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      : Part1
+00000000                             3  * Written by : Steve Fasoranti
+00000000                             4  * Date       : 25/01/2023
+00000000                             5  * Description: a. Ask user for gamer points
+00000000                             6  * b. Stores a gamers points in a memory
+00000000                             7  * location
+00000000                             8  * c. Displays points on screen
+00000000                             9  *-----------------------------------------------------------
+00001000                            10      ORG    $1000
+00001000                            11  START:                  ; first instruction of program
+00001000                            12  
+00001000                            13  * Put program code here 
+00001000                            14  
+00001000  43F9 0000101A             15          LEA MESSAGE, A1
+00001006  103C 000E                 16          MOVE.B #14,D0
+0000100A  4E4F                      17          TRAP #15
+0000100C  103C 0009                 18          MOVE.B #9,D0
+00001010                            19      
+00001010  103C 0004                 20          MOVE.B #4,D0
+00001014  4E4F                      21          TRAP    #15
+00001016                            22          
+00001016                            23          
+00001016                            24                 
+00001016  FFFF FFFF                 25      SIMHALT             
+0000101A                            26  
+0000101A= 43 61 6E 20 69 20 ...     27  MESSAGE DC.B 'Can i have gamer points?'
+00001032= 0D 0A 00                  28          DC.B    $0D,$0A,0
+00001035= 45 6E 74 65 72 20 ...     29  PROMPT DC.B 'Enter the amount of gamer points he can have:'
+00001062= 54 68 65 20 63 6F ...     30  THEMESSAGE DC.B 'The computer now has',0
+00001077                            31  
+00001077                            32  
+00001077                            33  * Put variables and constants here
+00001077                            34  
+00001077                            35      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+MESSAGE             101A
+PROMPT              1035
+START               1000
+THEMESSAGE          1062
