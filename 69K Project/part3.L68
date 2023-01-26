@@ -1,0 +1,42 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 25/01/2023 16:38:09
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      : 68k Project Task 1
+00000000                             3  * Written by : Steve Fasoranti 
+00000000                             4  * Date       : 25/01/2023
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00001000                             7      ORG    $1000
+00001000                             8  START:                  ; first instruction of program
+00001000                             9  
+00001000                            10  * Put program code here
+00001000                            11  
+00001000  43F9 0000101C             12              LEA text, A1        ;Simulates the text
+00001006  303C 0004                 13              MOVE #4,D0          ;Moving value 4 to D0
+0000100A  4E4F                      14              TRAP #15            ;Displays the unassigned number in D1
+0000100C  303C 000E                 15              MOVE #14,D0         ;Moves the value 14 to D0
+00001010  4E4F                      16              TRAP #15            ;Displays the unassigned number in D1
+00001012  303C 0003                 17              MOVE #3,D0          ;Moves the value 3 to D0
+00001016  4E4F                      18              TRAP #15            ;Displays the unassigned number in D1
+00001018                            19  
+00001018  FFFF FFFF                 20      SIMHALT             ; halt simulator
+0000101C                            21      
+0000101C                            22  
+0000101C= 44 61 74 61 20 52 ...     23  text dc.b 'Data Register: ',0
+0000102C                            24  
+0000102C                            25  
+0000102C                            26  * Put variables and constants here
+0000102C                            27  
+0000102C                            28      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+START               1000
+TEXT                101C
