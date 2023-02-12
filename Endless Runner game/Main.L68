@@ -1,0 +1,682 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 08/02/2023 16:24:28
+
+00000000                             1  *-------------------------------------------------------------------------------------------------------------------*
+00000000                             2  * Title      : My Graphical design project                                                                          *
+00000000                             3  * Written by : Steve Fasoranti                                                                                      *
+00000000                             4  * Date       : 26/01/2023                                                                                           *
+00000000                             5  * Description: A built in graphical endless runner game thats called DASH dash as far as you can dogding obsticles  *
+00000000                             6  *-------------------------------------------------------------------------------------------------------------------*
+00000000                             7  
+00001000                             8              ORG $1000
+00001000                             9  
+00001000                            10  START:
+00001000                            11  
+00001000  =00000020                 12  SPACE_KEY       equ $20
+00001000  =000000A0                 13  PlayerSprite    equ 160
+00001000  =0000009C                 14  Gravity                 equ $9C     ;gravity store for the closest representation of 9.8
+00001000  =00000004                 15  FRAC_BITS               equ 4
+00001000                            16  
+00001000  =00000008                 17  PLYR_W_INIT EQU         08          ; Players initial Width
+00001000  =00000008                 18  PLYR_H_INIT EQU         08          ; Players initial Height
+00001000                            19  
+00001000  =00000000                 20  PLYR_DFLT_V EQU         00          ; Default Player Velocity
+00001000  =FFFFFFEC                 21  PLYR_JUMP_V EQU        -20          ; Player Jump Velocity
+00001000  =00000001                 22  PLYR_DFLT_G EQU         01          ; Player Default Gravity
+00001000                            23  
+00001000  =00000001                 24  GND_TRUE    EQU         01          ; Player on Ground True
+00001000  =00000000                 25  GND_FALSE   EQU         00          ; Player on Ground False
+00001000                            26  
+00001000  =00000000                 27  RUN_INDEX   EQU         00          ; Player Run Sound Index  
+00001000  =00000001                 28  JMP_INDEX   EQU         01          ; Player Jump Sound Index  
+00001000  =00000002                 29  OPPS_INDEX  EQU         02          ; Player Opps Sound Index
+00001000                            30  
+00001000  =00000008                 31  ENMY_W_INIT EQU         08          ; Enemy initial Width
+00001000  =00000008                 32  ENMY_H_INIT EQU         08          ; Enemy initial Height
+00001000                            33  
+00001000                            34  
+00001000                            35              
+00001000                            36  *---------------------------------------------------------------------------------------------------------------*
+00001000                            37  *-------Changes screen size to the desires size of the screen so #700 is the width and the 600 is the length----*
+00001000                            38  *---------------------------------------------------------------------------------------------------------------*
+00001000  103C 0021                 39          move.b  #(ScreenChangeCode) , d0
+00001004  223C 02BC0258             40          move.l  #700*$10000+600, d1
+0000100A  4E4F                      41          trap    #15        
+0000100C                            42          
+0000100C                            43          
+0000100C                            44          
+0000100C                            45          
+0000100C                            46          
+0000100C                            47  ResetBattleVariables
+0000100C                            48  *---------------------------------------------------------*
+0000100C                            49  *-------Reset all of the variables for character----------*
+0000100C                            50  *---------------------------------------------------------*
+0000100C  23FC 0000000A 00001184    51          move.l  #10,Player1X
+00001016  23FC 00000226 00001188    52          move.l  #550, Player1Y
+00001020  23FC 000000A0 0000118C    53          move.l  #160, Player1ChunkX
+0000102A  23FC 00000000 00001190    54          move.l  #0, Player1ChunkY
+00001034                            55          
+00001034                            56          
+00001034                            57          
+00001034                            58          
+00001034                            59          
+00001034                            60                 
+00001034                            61  *-----------------------------------------------------------------------------------------------------*
+00001034                            62  *-----After buffering of the loading screen it loads the title image and uses DRAWIMAGE to draw it----*
+00001034                            63  *-----------------------------------------------------------------------------------------------------*    
+00001034  41F9 000150E2             64          LEA     TitleScreen, a0        ;Loads up the Title screen after the buffering from the bmp image file
+0000103A  223C 000002BC             65          move.l  #700, d1               ;moves the value long 700 (Screen size) into d1
+00001040  243C 00000258             66          move.l  #600, d2               ;moves the value long 700 (Screen size) into d2
+00001046  7600                      67          move.l  #0, d3                 ;moves the value long 0 into d3
+00001048  7800                      68          move.l  #0, d4                 ;moves the value long 0 into d4
+0000104A  7A00                      69          move.l  #0, d5                 ;moves the value long 0 into d5
+0000104C  7C00                      70          move.l  #0, d6                 ;moves the value long 0 into d6
+0000104E  4EB9 0029930E             71          jsr     DRAWIMAGE             ;Uses jsr to draw the image (DRAW IMAGE is a variable used in drawimages.x68 which draws the image in the terminal also using LEA)
+00001054                            72  
+00001054                            73  
+00001054                            74  
+00001054                            75  
+00001054                            76          
+00001054                            77  *-------------------------------------------------------------------------------------------------------*        
+00001054                            78  *--------Displays the new draw in d0 and replaces what was in d0 (the loading screen in the above code)-*
+00001054                            79  *-------------------------------------------------------------------------------------------------------*       
+00001054  103C 005E                 80          move.b  #94, d0                ;moves the value 94 into D0
+00001058  4E4F                      81          trap    #15                    ;displays the new draw in 
+0000105A                            82          
+0000105A                            83          
+0000105A                            84          
+0000105A                            85  
+0000105A                            86  *-------------------------------------------------------------------------------------------------------* 
+0000105A                            87  *-------------Set drawing pen to black for score bar----------------------------------------------------*
+0000105A                            88  *-------------------------------------------------------------------------------------------------------* 
+0000105A  7050                      89          move.l      #80, d0
+0000105C  7200                      90          move.l      #$00000000, d1
+0000105E  4E4F                      91          trap        #15
+00001060  7051                      92          move.l      #81, d0
+00001062  7200                      93          move.l      #$00000000, d1
+00001064  4E4F                      94          trap        #15
+00001066                            95          
+00001066                            96          
+00001066                            97          
+00001066                            98  *-------------------------------------------------------------------------------------------------------* 
+00001066                            99  *-------------Draw a filled black box in the upper 50 pixels of the screen------------------------------*
+00001066                           100  *-------------------------------------------------------------------------------------------------------* 
+00001066  323C 0000                101          move.w      #0, d1
+0000106A  343C 0000                102          move.w      #0, d2
+0000106E  363C 02BC                103          move.w      #700, d3
+00001072  383C 0032                104          move.w      #50, d4
+00001076  7057                     105          move.l      #87, d0
+00001078  4E4F                     106          trap        #15
+0000107A                           107  
+0000107A                           108          
+0000107A                           109  *------------------------------------------------------*
+0000107A                           110  *-------User presses SPACEKEY command to start---------*
+0000107A                           111  *------------------------------------------------------*
+0000107A                           112  ScenesLoop
+0000107A  103C 0013                113          move.b          #GET_KEY_INPUT_COMMAND,d0
+0000107E  7220                     114          move.l          #SPACE_KEY,d1
+00001080  4E4F                     115          TRAP            #15
+00001082  0C81 00000000            116          cmpi.l          #0, d1
+00001088  67F0                     117          BEQ             ScenesLoop
+0000108A                           118                  
+0000108A                           119  *----------------------------------------------------------------------*        
+0000108A                           120  *----------place double buffer on the view of the screen---------------*
+0000108A                           121  *----------------------------------------------------------------------*
+0000108A  103C 005E                122          move.b  #94, d0
+0000108E  4E4F                     123          trap    #15
+00001090                           124     
+00001090                           125  *----------------------------------------------------------------------*
+00001090                           126  *--------Draws the background of the Gameplaybackground----------------*
+00001090                           127  *----------------------------------------------------------------------*
+00001090                           128  
+00001090  41F9 001657D6            129          LEA     Frame1, a0
+00001096  223C 000002BC            130          move.l  #700, d1
+0000109C  243C 00000226            131          move.l  #550, d2
+000010A2  7600                     132          move.l  #0, d3
+000010A4  7832                     133          move.l  #50, d4
+000010A6  7A00                     134          move.l  #0, d5
+000010A8  7C32                     135          move.l  #50, d6
+000010AA  4EB9 0029930E            136          jsr     DRAWIMAGE
+000010B0                           137          
+000010B0                           138  *----------------------------------------------------------------------*        
+000010B0                           139  *--------store player velocity as a shifted number for calculation-----*
+000010B0                           140  *----------------------------------------------------------------------*
+000010B0  2039 00001194            141          move.l  Player1Velocity, d0
+000010B6  E948                     142          lsl     #FRAC_BITS, d0
+000010B8  23C0 00001194            143          move.l  d0, Player1Velocity
+000010BE                           144          *Store Player positions shifted as well for the Y coordinate.
+000010BE  2039 00001188            145          move.l  Player1Y, d0
+000010C4  E948                     146          lsl     #FRAC_BITS, d0
+000010C6  23C0 00001188            147          move.l  d0, Player1Y        
+000010CC  E948                     148          lsl     #FRAC_BITS, d0
+000010CE                           149   
+000010CE                           150  
+000010CE                           151         
+000010CE                           152  
+000010CE                           153  *-------------------------------------------------------------------------------------------------------* 
+000010CE                           154  *-------------Set drawing pen to black for score bar----------------------------------------------------*
+000010CE                           155  *-------------------------------------------------------------------------------------------------------* 
+000010CE  7050                     156          move.l      #80, d0
+000010D0  7200                     157          move.l      #$00000000, d1
+000010D2  4E4F                     158          trap        #15
+000010D4  7051                     159          move.l      #81, d0
+000010D6  7200                     160          move.l      #$00000000, d1
+000010D8  4E4F                     161          trap        #15
+000010DA                           162          
+000010DA                           163          
+000010DA                           164          
+000010DA                           165  *-------------------------------------------------------------------------------------------------------* 
+000010DA                           166  *-------------Draw a filled black box in the upper 50 pixels of the screen------------------------------*
+000010DA                           167  *-------------------------------------------------------------------------------------------------------* 
+000010DA  323C 0000                168          move.w      #0, d1
+000010DE  343C 0000                169          move.w      #0, d2
+000010E2  363C 02BC                170          move.w      #700, d3
+000010E6  383C 0032                171          move.w      #50, d4
+000010EA  7057                     172          move.l      #87, d0
+000010EC  4E4F                     173          trap        #15       
+000010EE                           174          
+000010EE                           175          
+000010EE                           176  *----------------------------------------------------------------------*
+000010EE                           177  *-----Load in values of both player 1 and 2 and call draw sub routine--*
+000010EE                           178  *----------------------------------------------------------------------*
+000010EE                           179  DrawPlayerCall
+000010EE  41F9 00148B4C            180      lea     Player, a0
+000010F4  2239 0000117C            181      move.l  Player1Width, d1
+000010FA  2439 00001180            182      move.l  Player1Height, d2
+00001100  2639 00001184            183      move.l  Player1X, d3
+00001106  2839 00001188            184      move.l  Player1Y, d4 
+0000110C  E84C                     185      lsr     #4, d4
+0000110E  2A39 0000118C            186      move.l  Player1ChunkX, d5
+00001114  2C39 00001190            187      move.l  Player1ChunkY, d6
+0000111A  4EB9 0029930E            188      jsr     DRAWIMAGE
+00001120                           189  
+00001120                           190        
+00001120                           191  *----------------------------------------------------------------------*        
+00001120                           192  *------draw character--------------------------------------------------*
+00001120                           193  *----------------------------------------------------------------------*
+00001120                           194  drawPlayers 
+00001120                           195        
+00001120  41F9 00148B4C            196      LEA     Player, a0
+00001126  2239 0000117C            197      move.l  Player1Width, d1
+0000112C  2439 00001180            198      move.l  Player1Height, d2
+00001132  2639 00001184            199      move.l  Player1X, d3
+00001138  2839 00001188            200      move.l  Player1Y, d4
+0000113E  E84C                     201      lsr     #FRAC_BITS, d4
+00001140  2A39 0000118C            202      move.l  Player1ChunkX, d5
+00001146  2C39 00001190            203      move.l  Player1ChunkY, d6
+0000114C  4EB9 0029930E            204      jsr     DRAWIMAGE
+00001152                           205      
+00001152  103C 005E                206      move.b  #94, d0
+00001156  4E4F                     207      trap    #15
+00001158                           208      
+00001158  4E75                     209      rts       
+0000115A                           210     
+0000115A                           211  *----------------------------------------------------------------------*
+0000115A                           212  *---------main gameloop to update entities and draw them---------------*
+0000115A                           213  *----------------------------------------------------------------------*
+0000115A                           214  GAMELOOP:
+0000115A  4EB9 00299386            215      jsr     initPlayerInput
+00001160  4EB8 1120                216      jsr     drawPlayers
+00001164                           217    
+00001164                           218          
+00001164                           219  *-------------------------------------------------------------------------------------------------------*        
+00001164                           220  *--------Displays the new draw in d0 and replaces what was in d0 (the loading screen in the above code)-*
+00001164                           221  *-------------------------------------------------------------------------------------------------------*       
+00001164  103C 005E                222          move.b  #94, d0                ;moves the value 94 into D0
+00001168  4E4F                     223          trap    #15                    ;displays the new draw in 
+0000116A                           224          
+0000116A                           225            
+0000116A                           226  
+0000116A                           227  *-----------------------------------------------------------
+0000116A                           228  * Subroutine    : Move Enemy
+0000116A                           229  * Description   : Move Enemy Right to Left
+0000116A                           230  *-----------------------------------------------------------
+0000116A                           231  MOVE_ENEMY:
+0000116A                           232  
+0000116A  4E75                     233      RTS
+0000116C                           234  
+0000116C                           235  
+0000116C                           236  
+0000116C                           237  *-----------------------------------------------------------
+0000116C                           238  * Subroutine    : Reset Enemy
+0000116C                           239  * Description   : Reset Enemy if to passes 0 to Right of Screen
+0000116C                           240  *-----------------------------------------------------------
+0000116C                           241  
+0000116C                           242  RESET_ENEMY_POSITION:
+0000116C                           243  
+0000116C                           244  
+0000116C  4E75                     245      RTS
+0000116E                           246  
+0000116E                           247  *-----------------------------------------------------------
+0000116E                           248  * Subroutine    : Draw
+0000116E                           249  * Description   : Draw Screen
+0000116E                           250  *-----------------------------------------------------------
+0000116E                           251  DRAW: 
+0000116E                           252      ; Enable back buffer
+0000116E  103C 005E                253      MOVE.B  #94,        D0
+00001172  4E4F                     254      TRAP    #15
+00001174                           255  
+00001174                           256      ; Clear the screen
+00001174                           257  
+00001174  323C FF00                258              MOVE.W  #$FF00,     D1          ; Clear contents
+00001178  4E4F                     259              TRAP    #15                     ; Trap (Perform action)
+0000117A                           260  
+0000117A                           261  
+0000117A                           262  
+0000117A                           263  
+0000117A  4E75                     264      RTS                             ; Return to subroutine
+0000117C                           265  
+0000117C                           266  *-----------------------------------------------------------------------*
+0000117C                           267  *-------Sounds that are used in the same directory are declared here----*
+0000117C                           268  *-----------------------------------------------------------------------*
+0000117C                           269  
+0000117C                           270  
+0000117C                           271  
+0000117C                           272  *-----------------------------------------------------------------------*
+0000117C                           273  *--------The character on the screen------------------------------------*
+0000117C                           274  *-----------------------------------------------------------------------*
+0000117C                           275  Player1Width
+0000117C= 00000020                 276      dc.l   32
+00001180                           277  Player1Height
+00001180= 00000029                 278      dc.l   41 
+00001184                           279  Player1X
+00001184= 0000000A                 280      dc.l    10
+00001188                           281  Player1Y
+00001188= 00000226                 282      dc.l    550
+0000118C                           283  Player1ChunkX
+0000118C= 000000A0                 284      dc.l    160
+00001190                           285  Player1ChunkY
+00001190= 00000000                 286      dc.l    0       
+00001194                           287  Player1Velocity
+00001194= 00000000                 288      dc.l    0
+00001198                           289  
+00001198                           290  
+00001198                           291  *--------------------------------------------------------------------------------------------------------------------------------------------*    
+00001198                           292  *-------Variables in the drawimages.x68 are Declared here then use the images in the same file location to load the images in bmp form-------*
+00001198                           293  *--------------------------------------------------------------------------------------------------------------------------------------------*  
+00001198                           294  LoadingScreen
+00001198                           295        INCBIN  "loadinggame.bmp"
+000150E2                           296  TitleScreen
+000150E2                           297        INCBIN  "Titlesmall.bmp"
+00148B4C                           298  Player
+00148B4C                           299        INCBIN  "player_320x92.bmp"
+001657D6                           300  Frame1
+001657D6                           301        INCBIN  "assests2\frame1.bmp"
+00299240                           302  
+00299240                           303   
+00299240                           304  *--------------------------------------------------------------------------------------------------------------------*      
+00299240                           305  *--------Includes the file in the same directory with the varibles above so that the code is affected in the main-----*
+00299240                           306  *---------------------------------------------------------------------------------------------------------------------*                      
+00299240                           307   include "drawimages.x68"
+00299240                           308  
+00299240                           309  ;EQUs for trap code calls
+00299240  =00000050                310  PenColorCode      EQU     80
+00299240  =00000052                311  DrawPixelCode     EQU     82
+00299240  =00000021                312  ScreenChangeCode  EQU     33
+00299240                           313  
+00299240                           314  DrawChunk
+00299240                           315  ;reads in file information and user input
+00299240                           316  ;and sets the variables at the bottom and on stack
+00299240                           317  ;which will be used to draw the chunk of the bmp file
+00299240                           318  
+00299240  206F 0004                319          move.l  4(sp), a0               ;store the pointer to the image data into an address for access
+00299244  2028 000A                320          move.l  10(a0), d0              ;grab the offset from header to pixels
+00299248  E158                     321          rol.w   #8, d0                  ;rotate the word by 8 to move offset to appropriate position          
+0029924A  4840                     322          swap    d0                      ;now swap the words of the offset for the next rotate
+0029924C  E158                     323          rol.w   #8, d0                  ;finally rotate the words one time to make the true offset value readable
+0029924E  D0C0                     324          add.w   d0, a0                  ;change position in memory to pixel data
+00299250                           325          
+00299250                           326          *Calculate beginning position of chunk to draw from Y position
+00299250  4284                     327          clr.l   d4
+00299252  282F 0024                328          move.l  36(sp),d4
+00299256  2A2F 0014                329          move.l  20(sp), d5
+0029925A  DAAF 000C                330          add.l   12(sp), d5
+0029925E  9885                     331          sub.l   d5, d4
+00299260  4285                     332          clr.l   d5
+00299262  3A04                     333          move.w  d4, d5
+00299264  4284                     334          clr.l   d4
+00299266                           335          
+00299266  282F 0020                336          move.l  32(sp), d4
+0029926A                           337          
+0029926A  CAC4                     338          mulu.w  d4, d5
+0029926C                           339          *set position in address at the beginning of chunk draw
+0029926C  D1C5                     340          add.l   d5, a0
+0029926E  D1C5                     341          add.l   d5, a0 
+00299270  D1C5                     342          add.l   d5, a0    
+00299272                           343           
+00299272                           344           
+00299272                           345           
+00299272                           346                 
+00299272  262F 000C                347          move.l  12(sp), d3
+00299276                           348          
+00299276                           349  OUTERLOOP
+00299276  3C3C 0000                350          move.w  #0, d6                  ;set or reset x counter for for loop
+0029927A  282F 0010                351          move.l  16(sp), d4
+0029927E  C8FC 0003                352          mulu.w  #3, d4
+00299282  D0C4                     353          add.w   d4, a0                  ;add start of x to 0
+00299284                           354          
+00299284                           355  INNERLOOP
+00299284  4284                     356          clr.l   d4                      ;make sure d4 has nothing in it
+00299286  1818                     357          move.b  (a0)+,d4                ;grab the first pixel
+00299288  4844                     358          swap.w  d4                      ;swap the pixel to change its position in memory for the rest of the pixel data
+0029928A  4285                     359          clr.l   d5                      ;make sure d5 is also clear
+0029928C  2A04                     360          move.l  d4, d5                  ;store previously found pixel data in d5 for next value
+0029928E  4284                     361          clr.l   d4                      ;clear d4 for the next bit of memory
+00299290  1818                     362          move.b  (a0)+, d4               ;grab next memory bit
+00299292  E14C                     363          lsl     #8, d4                  ;shift left to get pixel in top of second word to combine with previous pixel bit
+00299294  DA84                     364          add.l   d4, d5                  ;combine the data
+00299296  4284                     365          clr.l   d4                      ;clear d4 once again
+00299298  1818                     366          move.b  (a0)+, d4               ;get last bit needed
+0029929A  DA84                     367          add.l   d4, d5                  ;combine it to the end of the previous two bits to get the pixel value
+0029929C                           368          
+0029929C                           369          
+0029929C  4284                     370          clr.l   d4                      ;If pixel is pink, do not draw it
+0029929E  1838 00FF                371          move.b  $FF, d4
+002992A2  4844                     372          swap    d4
+002992A4  1838 00FF                373          move.b  $FF, d4
+002992A8                           374          
+002992A8  BA44                     375          cmp     d4, d5
+002992AA  6700 0006                376          BEQ     INCREMENT
+002992AE                           377          
+002992AE  6000 0044                378          BRA     DRAWPIXEL               ;pixel meets criteria and can be printed
+002992B2                           379          
+002992B2                           380  INCREMENT
+002992B2  4284                     381          clr.l   d4                      ;make sure d4 is empty for use  
+002992B4  5246                     382          add.w   #1,d6                   ;increment x counter by one
+002992B6                           383          
+002992B6                           384          *Check for end of X row
+002992B6  282F 0010                385          move.l  16(sp), d4
+002992BA  D886                     386          add.l   d6, d4
+002992BC  2A2F 0020                387          move.l  32(sp), d5
+002992C0  B845                     388          cmp     d5, d4
+002992C2  6700 0022                389          BEQ     INCREMENTY
+002992C6                           390        
+002992C6  282F 0008                391          move.l  8(sp), d4               ;move width of image into register
+002992CA  BC44                     392          cmp     d4, d6                  ;see if counter is beyond x bounds
+002992CC  66B6                     393          BNE     INNERLOOP               ;if it is not, loop again
+002992CE                           394          
+002992CE                           395          ;skip after outside of box on x axis
+002992CE  4284                     396          clr.l   d4
+002992D0  282F 0010                397          move.l  16(sp), d4
+002992D4  D8AF 0008                398          add.l   8(sp), d4
+002992D8  4285                     399          clr.l   d5
+002992DA  2A2F 0020                400          move.l  32(sp), d5
+002992DE  9A84                     401          sub.l   d4, d5
+002992E0  CAFC 0003                402          mulu.w  #3, d5
+002992E4                           403          ;add offset to address
+002992E4  D1C5                     404          add.l   d5, a0
+002992E6                           405  
+002992E6                           406  INCREMENTY        
+002992E6                           407          ;take care of padding
+002992E6  D1F9 00299382            408          add.l   Padding, a0             ;add padding.  If there is none, the address won't skip anything
+002992EC                           409          
+002992EC  5343                     410          sub.w   #1, d3                  ;decrement y counter to see if you are out of the y iteration
+002992EE  6686                     411          BNE     OUTERLOOP               ;if it is not, loop back to outer loop
+002992F0  6000 001A                412          BRA     ENDROUTINE              ;branch to end of subroutine, whole image has been iterated
+002992F4                           413          
+002992F4                           414  DRAWPIXEL
+002992F4  2205                     415          move.l  d5, d1                  ;move pixel data into d1 for pen color
+002992F6  7050                     416          move.l  #PenColorCode, d0       ;set trap code for setting the pen color
+002992F8  4E4F                     417          trap    #15                     ;set pen color
+002992FA                           418                           
+002992FA  222F 0018                419          move.l   24(sp), d1             ;store the starting x position of the chunk
+002992FE  D286                     420          add.l    d6, d1                 ;add iteration position of x to start of chunk
+00299300                           421          
+00299300  242F 001C                422          move.l  28(sp), d2              ;start at top of chunk to flip image
+00299304  D483                     423          add.l   d3, d2                  ;subtract current y position
+00299306  7052                     424          move.l  #DrawPixelCode, d0      ;Set trap code to draw pixel at position
+00299308  4E4F                     425          trap    #15                     ;draw pixel at position
+0029930A                           426          
+0029930A  60A6                     427          BRA     INCREMENT               ;increment position
+0029930C                           428          
+0029930C                           429  ENDROUTINE
+0029930C  4E75                     430          rts                             ;branch back to end of program
+0029930E                           431  
+0029930E                           432  DRAWIMAGE
+0029930E                           433          *Reset padding for multiple calls
+0029930E  23FC 00000000 00299382   434          move.l  #0, Padding
+00299318                           435          
+00299318  7024                     436          move.l  #36, d0                 ;number of 7 4 byte arguments to prepare stack to receive
+0029931A  9FC0                     437          sub.l   d0, sp                  ;prepare stack to receive arguments 
+0029931C                           438          
+0029931C  2E88                     439          move.l  a0, (sp)                ;load pointer to the .bmp file onto the stack
+0029931E                           440          
+0029931E                           441          ;store width of chunk on the stack
+0029931E  2F41 0004                442          move.l  d1, 4(sp)
+00299322                           443          ;store height of the chunk on the stack 
+00299322  2F42 0008                444          move.l  d2, 8(sp)               
+00299326                           445          
+00299326                           446          ;add start of chunk to move with image
+00299326  2F45 000C                447          move.l   d5, 12(sp)             ;store Top left x of draw chunk on stack
+0029932A                           448          
+0029932A                           449          ;subtract y position from height to get start y
+0029932A  2F46 0010                450          move.l  d6, 16(sp)              ;store Top left y of draw chunk on stack                      
+0029932E                           451  
+0029932E  2F43 0014                452          move.l  d3, 20(sp)              ;store Beginning print location for x axis on stack
+00299332  2F44 0018                453          move.l  d4, 24(sp)              ;store Beginning print location for y axis on stack
+00299336                           454          
+00299336  2228 0012                455          move.l  18(a0), d1              ;get width of image from .bmp file
+0029933A  E159                     456          rol.w   #8, d1          
+0029933C  4841                     457          swap    d1
+0029933E  E159                     458          rol.w   #8, d1                  ;rotate and swap long word to get true width value to use later
+00299340  2F41 001C                459          move.l  d1, 28(sp)              ;store width of image to make variable not global
+00299344                           460  
+00299344                           461          
+00299344                           462          ;calculate for padding.  
+00299344                           463          ;This only concerns width
+00299344  7404                     464          move.l  #4, d2                  ;move 4 into register for padding calculation
+00299346  C2FC 0003                465          mulu.w  #3, d1                  ;multiply image width by 3 for formula
+0029934A  82FC 0004                466          divu.w  #4, d1                  ;divide by four to find remainder
+0029934E  4841                     467          swap    d1                      ;swap remainder into lower word
+00299350  4284                     468          clr.l   d4                      ;make sure d4 is empty
+00299352  383C 0000                469          move.w  #0, d4                  ;move 0 into d4 
+00299356  B841                     470          cmp.w   d1, d4                  ;if equal, there is no padding
+00299358  6700 000A                471          BEQ     RUNPROGRAM              ;continue in program for special case of being divisible by 4
+0029935C                           472          
+0029935C                           473  ACCOUNTFORPADDING
+0029935C  9441                     474          sub.w   d1, d2                  ;subtract remainder from 4 to get padding
+0029935E  23C2 00299382            475          move.l  d2, Padding             ;store padding for later use
+00299364                           476          
+00299364                           477          
+00299364                           478  RUNPROGRAM       
+00299364  2428 0016                479          move.l  22(a0), d2              ;get height of image from .bmp file
+00299368  E15A                     480          rol.w   #8, d2          
+0029936A  4842                     481          swap    d2
+0029936C  E15A                     482          rol.w   #8, d2                  ;rotate and swap long word to get true height value to use later
+0029936E  2F42 0020                483          move.l  d2, 32(sp)              ;store height of image to make variable not global
+00299372                           484  
+00299372  4EB9 00299240            485          jsr     DrawChunk               ;call subroutine to draw chunk of image       
+00299378                           486         
+00299378  4280                     487          clr.l   d0
+0029937A  7024                     488          move.l  #36, d0                
+0029937C  DFC0                     489          add.l   d0, sp                  ;fix stack
+0029937E                           490          
+0029937E  4287                     491          clr.l   d7
+00299380                           492          
+00299380  4E75                     493          rts
+00299382                           494  
+00299382                           495  Padding
+00299382= 00000000                 496          dc.l    0
+00299386                           497  
+00299386                           498  
+00299386                           499  
+00299386                           500  
+00299386                           501  
+00299386                           502  
+00299386                           503  
+00299386                           504  
+00299386                           505  
+00299386                           506  
+00299386                           507  
+00299386                           508  
+00299386                           509  
+00299386                           510  
+00299386                           511  
+00299386                           512  
+00299386                           513  
+00299386                           514  
+00299386                           515  
+00299386                           516  
+00299386                           517  
+00299386                           518  
+00299386                           519  
+00299386                           520  
+00299386                           521  
+00299386                           522  
+00299386                           523  
+00299386                           524  
+00299386                           525  
+00299386                           526  
+00299386                           527  
+00299386                           528  
+00299386                           529  
+00299386                           530  
+00299386                           531  
+00299386                           532  
+00299386                           533  
+00299386                           534  -------------------- end include --------------------
+00299386                           535   include "playerInput.x68"
+00299386                           536  
+00299386                           537  
+00299386                           538  ALL_REG                 REG     D0-D7/A0-A6
+00299386  =00000013                539  GET_KEY_INPUT_COMMAND   equ     19        
+00299386                           540  
+00299386                           541  initPlayerInput
+00299386                           542          *ASCII CODE 25 = 0
+00299386  7420                     543          move.l          #$20,d2
+00299388                           544  inputLoop
+00299388  4280                     545          clr.l           d0   
+0029938A  103C 0013                546          move.b          #GET_KEY_INPUT_COMMAND,d0
+0029938E  2202                     547          move.l          d2,d1
+00299390  4E4F                     548          TRAP            #15
+00299392  0C01 0000                549          cmpi.b          #0,d1
+00299396  6700 0008                550          beq             noCall
+0029939A  4EB9 002993AA            551          jsr             callFunction
+002993A0                           552  noCall
+002993A0  5282                     553          add.l           #1,d2          
+002993A2  0C02 005A                554          cmpi.b          #$5A,d2
+002993A6  66E0                     555          bne             inputLoop
+002993A8                           556       
+002993A8                           557  
+002993A8                           558          *end of input, return
+002993A8  4E75                     559          rts
+002993AA                           560  
+002993AA                           561  callFunction
+002993AA  48E7 FFFE                562          movem.l ALL_REG,-(sp)
+002993AE                           563  
+002993AE  0482 00000020            564          sub.l   #$20,d2
+002993B4  E58A                     565          lsl.l   #2,d2
+002993B6  2230 2000                566          move.l  (a0,d2),d1
+002993BA  0C81 00000000            567          cmpi.l  #0,d1
+002993C0  6700 0006                568          beq     noFuncPtr
+002993C4  2241                     569          move.l  d1,a1
+002993C6  4E91                     570          jsr     (a1)  
+002993C8                           571  noFuncPtr
+002993C8  4CDF 7FFF                572          movem.l (sp)+,ALL_REG
+002993CC  4E75                     573          rts
+002993CE                           574  
+002993CE                           575  
+002993CE                           576  
+002993CE                           577  
+002993CE                           578  
+002993CE                           579          
+002993CE                           580  
+002993CE                           581  
+002993CE                           582  
+002993CE                           583  
+002993CE                           584  
+002993CE                           585  
+002993CE                           586  
+002993CE                           587  
+002993CE                           588  
+002993CE                           589  
+002993CE                           590  
+002993CE                           591  
+002993CE                           592  
+002993CE                           593  
+002993CE                           594  
+002993CE                           595  
+002993CE                           596  
+002993CE                           597  
+002993CE                           598  
+002993CE                           599  
+002993CE                           600  
+002993CE                           601  
+002993CE                           602  
+002993CE                           603  
+002993CE                           604  
+002993CE                           605  
+002993CE                           606  
+002993CE                           607  
+002993CE                           608  -------------------- end include --------------------
+002993CE                           609  
+002993CE                           610  
+002993CE                           611  OUIT
+002993CE                           612              END     START
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+ACCOUNTFORPADDING   29935C
+ALL_REG             7FFF
+CALLFUNCTION        2993AA
+DRAW                116E
+DRAWCHUNK           299240
+DRAWIMAGE           29930E
+DRAWPIXEL           2992F4
+DRAWPIXELCODE       52
+DRAWPLAYERCALL      10EE
+DRAWPLAYERS         1120
+ENDROUTINE          29930C
+ENMY_H_INIT         8
+ENMY_W_INIT         8
+FRAC_BITS           4
+FRAME1              1657D6
+GAMELOOP            115A
+GET_KEY_INPUT_COMMAND  13
+GND_FALSE           0
+GND_TRUE            1
+GRAVITY             9C
+INCREMENT           2992B2
+INCREMENTY          2992E6
+INITPLAYERINPUT     299386
+INNERLOOP           299284
+INPUTLOOP           299388
+JMP_INDEX           1
+LOADINGSCREEN       1198
+MOVE_ENEMY          116A
+NOCALL              2993A0
+NOFUNCPTR           2993C8
+OPPS_INDEX          2
+OUIT                2993CE
+OUTERLOOP           299276
+PADDING             299382
+PENCOLORCODE        50
+PLAYER              148B4C
+PLAYER1CHUNKX       118C
+PLAYER1CHUNKY       1190
+PLAYER1HEIGHT       1180
+PLAYER1VELOCITY     1194
+PLAYER1WIDTH        117C
+PLAYER1X            1184
+PLAYER1Y            1188
+PLAYERSPRITE        A0
+PLYR_DFLT_G         1
+PLYR_DFLT_V         0
+PLYR_H_INIT         8
+PLYR_JUMP_V         FFFFFFEC
+PLYR_W_INIT         8
+RESETBATTLEVARIABLES  100C
+RESET_ENEMY_POSITION  116C
+RUNPROGRAM          299364
+RUN_INDEX           0
+SCENESLOOP          107A
+SCREENCHANGECODE    21
+SPACE_KEY           20
+START               1000
+TITLESCREEN         150E2
